@@ -227,25 +227,23 @@ macro( AC_SEARCH_LIBS LIB_REQUIRED FUNCTION_NAME LIB_DIR )
 	#endif(${LIB_REQUIRED})
 endmacro()
 
-macro( _internal_message msg )
-	message ( "${msg}" )
-endmacro()
-
 macro( check_lib var lib )
 	set ( _arg_list ${ARGN} )
+	find_package(PkgConfig)
 
-#	if ( PKG_CONFIG_FOUND AND NOT ${var}_FOUND AND NOT CMAKE_CROSSCOMPILING )
-#		string ( TOLOWER ${lib} lower_lib )
-#		pkg_search_module ( ${var} QUIET ${lower_lib} )
-#	endif ()
+	if ( PKG_CONFIG_FOUND AND NOT ${var}_FOUND AND NOT CMAKE_CROSSCOMPILING )
+		string ( TOLOWER ${lib} lower_lib )
+		pkg_search_module ( ${var} QUIET ${lower_lib} )
+		diag (var)
+	endif ()
 
-#	if ( ${var}_FOUND )
-#		include_directories ( ${${var}_INCLUDE_DIRS} )
+	if ( ${var}_FOUND )
+		include_directories ( ${${var}_INCLUDE_DIRS} )
 		# Make sure include directories for headers found using find_path below
 		# are re-added when reconfiguring
-#		include_directories ( ${${var}_INCLUDE} )
-#		_internal_message ( "-- ${var} found pkg" )
-#	else ()
+		include_directories ( ${${var}_INCLUDE} )
+		diags ( "${var} found pkg" )
+	else ()
 		find_library ( ${var}_LIBRARIES ${lib} )
 		if ( _arg_list )
 			find_path ( ${var}_INCLUDE ${_arg_list} )
@@ -255,16 +253,16 @@ macro( check_lib var lib )
 
 		if ( ${var}_LIBRARIES AND ${var}_INCLUDE )
 			include_directories ( ${${var}_INCLUDE} )
-			_internal_message ( "-- ${var} found" )
+			diags ( "${var} found" )
 			set ( ${var}_FOUND 1 CACHE INTERNAL "" )
 		elseif ( ${var}_LIBRARIES )
-			_internal_message ( "-- ${var} not found (miss include)" )
+			diags ( "${var} not found (miss include)" )
 		elseif ( ${var}_INCLUDE )
-			_internal_message ( "-- ${var} not found (miss lib)" )
+			diags ( "${var} not found (miss lib)" )
 		else ()
-			_internal_message ( "-- ${var} not found" )
+			diags ( "${var} not found" )
 		endif ()
-#	endif ()
+	endif ()
 endmacro()
 
 macro( REMOVE_CRLF RETVAL INSTR )
@@ -379,12 +377,14 @@ function( INSTALL_DBG BINARYNAME )
 	INSTALL_BINARY ( ${BINARYNAME} )
 endfunction()
 
+include ( CheckCXXSourceCompiles )
+
 function ( CheckSystemASIOVersion OUTVAR )
 	set ( system_asio_test_source_file "
 #include <asio.hpp>
 #define XSTR(x) STR(x)
 #define STR(x) #x
-#pragma message \" Asio version:\" XSTR(ASIO_VERSION)
+#pragma message \"Asio version:\" XSTR(ASIO_VERSION)
 #if ASIO_VERSION < 101001
 #error Included asio version is too old
 #elif ASIO_VERSION >= 101100
@@ -396,11 +396,17 @@ int main()
     return 0;
 }
 ")
+	set ( CMAKE_REQUIRED_FLAGS "${CC_FLAGS}")
+	get_property ( REQUIRED_DEFINITIONS DIRECTORY PROPERTY COMPILE_DEFINITIONS )
+	get_property ( CMAKE_REQUIRED_INCLUDES DIRECTORY PROPERTY INCLUDE_DIRECTORIES )
+	set ( CMAKE_REQUIRED_DEFINITIONS "")
+	FOREACH ( def ${REQUIRED_DEFINITIONS} )
+		LIST (APPEND CMAKE_REQUIRED_DEFINITIONS "-D${def}")
+	endforeach()
 
-	include ( CheckCXXSourceCompiles )
-	CHECK_CXX_SOURCE_COMPILES ( "${system_asio_test_source_file}" _res )
-	message ( STATUS "Checking ASIO version (>= 1.10.1 and < 1.11.0) ... ${_res}" )
-	set ( "${OUTVAR}" "${_res}" PARENT_SCOPE )
+	message ( STATUS "Checking ASIO version (>= 1.10.1 and < 1.11.0)" )
+	CHECK_CXX_SOURCE_COMPILES ( "${system_asio_test_source_file}" ${OUTVAR}__res_ )
+	set ( "${OUTVAR}" "${${OUTVAR}__res_}" PARENT_SCOPE )
 endfunction()
 
 
@@ -411,13 +417,12 @@ class B : public A {};
 int main() { return 0; }
 " )
 
-	include ( CheckCXXSourceCompiles )
 	set (OLDFLAGS "${CMAKE_CXX_FLAGS}")
 	set ( CMAKE_CXX_FLAGS "-Weffc++ -Werror ${CMAKE_CXX_FLAGS}")
-	CHECK_CXX_SOURCE_COMPILES ( "${_test_source}" ${OUTVAR} )
+	message ( STATUS "Checking whether to enable -Weffc++" )
+	CHECK_CXX_SOURCE_COMPILES ( "${_test_source}" ${OUTVAR}__res_ )
 	set (CMAKE_CXX_FLAGS "${OLDFLAGS}")
-	message ( STATUS "Checking whether to enable -Weffc++ ... ${${OUTVAR}}" )
-	set ( "${OUTVAR}" "${${OUTVAR}}" PARENT_SCOPE )
+	set ( "${OUTVAR}" "${${OUTVAR}__res_}" PARENT_SCOPE )
 endfunction()
 
 function( CheckSetEcdhAuto OUTVAR )
@@ -426,10 +431,9 @@ function( CheckSetEcdhAuto OUTVAR )
 int main() { SSL_CTX* ctx=NULL; return !SSL_CTX_set_ecdh_auto(ctx, 1); }
 " )
 
-	include ( CheckCXXSourceCompiles )
-	CHECK_CXX_SOURCE_COMPILES ( "${_test_source}" ${OUTVAR} )
-	message ( STATUS "Checking for SSL_CTX_set_ecdh_auto() ... ${${OUTVAR}}" )
-	set ( "${OUTVAR}" "${${OUTVAR}}" PARENT_SCOPE )
+	message ( STATUS "Checking for SSL_CTX_set_ecdh_auto()" )
+	CHECK_CXX_SOURCE_COMPILES ( "${_test_source}" ${OUTVAR}__res_ )
+	set ( "${OUTVAR}" "${${OUTVAR}__res_}" PARENT_SCOPE )
 endfunction()
 
 function( CheckSetTmpEcdh OUTVAR )
@@ -438,8 +442,8 @@ function( CheckSetTmpEcdh OUTVAR )
 int main() { SSL_CTX* ctx=NULL; EC_KEY* ecdh=NULL; return !SSL_CTX_set_tmp_ecdh(ctx,ecdh); }
 " )
 
-	include ( CheckCXXSourceCompiles )
-	CHECK_CXX_SOURCE_COMPILES ( "${_test_source}" ${OUTVAR} )
-	message ( STATUS "Checking for SSL_CTX_set_tmp_ecdh_() ... ${${OUTVAR}}" )
-	set ( "${OUTVAR}" "${${OUTVAR}}" PARENT_SCOPE )
+	message ( STATUS "Checking for SSL_CTX_set_tmp_ecdh_()" )
+	CHECK_CXX_SOURCE_COMPILES ( "${_test_source}" ${OUTVAR}__res_ )
+	set ( "${OUTVAR}" "${${OUTVAR}__res_}" PARENT_SCOPE )
 endfunction()
+
