@@ -3,6 +3,18 @@ if ( __cmake_helpers_included )
 endif ()
 set ( __cmake_helpers_included YES )
 
+function( DIAG VARR )
+	if ( DIAGNOSTIC )
+		message ( STATUS "${VARR} -> ${${VARR}}" )
+	endif ()
+endfunction()
+
+function( DIAGS MSG )
+	if ( DIAGNOSTIC )
+		message ( STATUS "${MSG}" )
+	endif ()
+endfunction()
+
 # check for list of headers, ;-separated. For every existing header.h
 # the HAVE_HEADER_H became defined as 1
 include ( CheckIncludeFile )
@@ -215,6 +227,46 @@ macro( AC_SEARCH_LIBS LIB_REQUIRED FUNCTION_NAME LIB_DIR )
 	#endif(${LIB_REQUIRED})
 endmacro()
 
+macro( _internal_message msg )
+	message ( "${msg}" )
+endmacro()
+
+macro( check_lib var lib )
+	set ( _arg_list ${ARGN} )
+
+#	if ( PKG_CONFIG_FOUND AND NOT ${var}_FOUND AND NOT CMAKE_CROSSCOMPILING )
+#		string ( TOLOWER ${lib} lower_lib )
+#		pkg_search_module ( ${var} QUIET ${lower_lib} )
+#	endif ()
+
+#	if ( ${var}_FOUND )
+#		include_directories ( ${${var}_INCLUDE_DIRS} )
+		# Make sure include directories for headers found using find_path below
+		# are re-added when reconfiguring
+#		include_directories ( ${${var}_INCLUDE} )
+#		_internal_message ( "-- ${var} found pkg" )
+#	else ()
+		find_library ( ${var}_LIBRARIES ${lib} )
+		if ( _arg_list )
+			find_path ( ${var}_INCLUDE ${_arg_list} )
+		else ()
+			set ( ${var}_INCLUDE FALSE )
+		endif ()
+
+		if ( ${var}_LIBRARIES AND ${var}_INCLUDE )
+			include_directories ( ${${var}_INCLUDE} )
+			_internal_message ( "-- ${var} found" )
+			set ( ${var}_FOUND 1 CACHE INTERNAL "" )
+		elseif ( ${var}_LIBRARIES )
+			_internal_message ( "-- ${var} not found (miss include)" )
+		elseif ( ${var}_INCLUDE )
+			_internal_message ( "-- ${var} not found (miss lib)" )
+		else ()
+			_internal_message ( "-- ${var} not found" )
+		endif ()
+#	endif ()
+endmacro()
+
 macro( REMOVE_CRLF RETVAL INSTR )
 	if ( NOT INSTR EQUAL "" )
 		string ( REGEX REPLACE "\n" "" ${RETVAL} ${INSTR} )
@@ -344,8 +396,50 @@ int main()
     return 0;
 }
 ")
-	message (STATUS "Checking ASIO version (>= 1.10.1 and < 1.11.0) ...")
+
 	include ( CheckCXXSourceCompiles )
 	CHECK_CXX_SOURCE_COMPILES ( "${system_asio_test_source_file}" _res )
+	message ( STATUS "Checking ASIO version (>= 1.10.1 and < 1.11.0) ... ${_res}" )
 	set ( "${OUTVAR}" "${_res}" PARENT_SCOPE )
+endfunction()
+
+
+function( CheckWeffcpp OUTVAR )
+	set ( _test_source "
+class A {};
+class B : public A {};
+int main() { return 0; }
+" )
+
+	include ( CheckCXXSourceCompiles )
+	set (OLDFLAGS "${CMAKE_CXX_FLAGS}")
+	set ( CMAKE_CXX_FLAGS "-Weffc++ -Werror ${CMAKE_CXX_FLAGS}")
+	CHECK_CXX_SOURCE_COMPILES ( "${_test_source}" ${OUTVAR} )
+	set (CMAKE_CXX_FLAGS "${OLDFLAGS}")
+	message ( STATUS "Checking whether to enable -Weffc++ ... ${${OUTVAR}}" )
+	set ( "${OUTVAR}" "${${OUTVAR}}" PARENT_SCOPE )
+endfunction()
+
+function( CheckSetEcdhAuto OUTVAR )
+	set ( _test_source "
+#include <openssl/ssl.h>
+int main() { SSL_CTX* ctx=NULL; return !SSL_CTX_set_ecdh_auto(ctx, 1); }
+" )
+
+	include ( CheckCXXSourceCompiles )
+	CHECK_CXX_SOURCE_COMPILES ( "${_test_source}" ${OUTVAR} )
+	message ( STATUS "Checking for SSL_CTX_set_ecdh_auto() ... ${${OUTVAR}}" )
+	set ( "${OUTVAR}" "${${OUTVAR}}" PARENT_SCOPE )
+endfunction()
+
+function( CheckSetTmpEcdh OUTVAR )
+	set ( _test_source "
+#include <openssl/ssl.h>
+int main() { SSL_CTX* ctx=NULL; EC_KEY* ecdh=NULL; return !SSL_CTX_set_tmp_ecdh(ctx,ecdh); }
+" )
+
+	include ( CheckCXXSourceCompiles )
+	CHECK_CXX_SOURCE_COMPILES ( "${_test_source}" ${OUTVAR} )
+	message ( STATUS "Checking for SSL_CTX_set_tmp_ecdh_() ... ${${OUTVAR}}" )
+	set ( "${OUTVAR}" "${${OUTVAR}}" PARENT_SCOPE )
 endfunction()

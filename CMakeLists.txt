@@ -2,17 +2,7 @@ cmake_minimum_required ( VERSION 3.12 )
 project ( GALERA )
 
 
-function( DIAG VARR )
-	if ( DIAGNOSTIC )
-		message ( STATUS "${VARR} -> ${${VARR}}" )
-	endif ()
-endfunction()
 
-function( DIAGS MSG )
-	if ( DIAGNOSTIC )
-		message ( STATUS "${MSG}" )
-	endif ()
-endfunction()
 
 set (DIAGNOSTIC 1)
 
@@ -100,14 +90,37 @@ list ( APPEND EXTRA_LIBRARIES ${CMAKE_THREAD_LIBS_INIT} )
 #include ( SphEndianess )
 
 message ( STATUS "Checking for library functions" )
-ac_search_libs ( "rt" "clock_gettime" EXTRA_LIBRARIES )
+check_lib ("rt" RT)
+check_lib ("m" M)
+#ac_search_libs ( "rt" "clock_gettime" EXTRA_LIBRARIES )
 ac_check_headers ( "sys/epoll.h;byteswap.h;endian.h;execinfo.h" )
+
+if ( HAVE_SYS_EPOLL_H)
+	add_definitions ("-DGALERA_USE_GU_NETWORK")
+endif()
 
 add_definitions ( "-DHAVE_STD_ARRAY" )
 add_definitions ( "-DHAVE_STD_SHARED_PTR" )
 add_definitions ( "-DHAVE_STD_UNORDERED_MAP" )
 
+#ac_check_headers ( "boost/shared_ptr.hpp" )
+
 CheckSystemASIOVersion ( asio )
+
+
+if ( asio )
+	add_definitions ("-DHAVE_ASIO_HPP")
+else()
+	message (STATUS "Falling back to bundled asio")
+endif()
+
+ac_check_headers ( "asio/ssl.hpp" )
+check_lib ("ssl" SSL)
+check_lib ("crypto" CRYPTO)
+
+CheckSetEcdhAuto ( ecdhauto )
+CheckSetTmpEcdh ( tmpecdh )
+CheckWeffcpp ( weffcpp )
 
 
 diag ( asio )
@@ -118,3 +131,7 @@ diag ( CMAKE_SYSTEM_PROCESSOR )
 diag ( EXTRA_SYSROOT )
 diag ( LIBPATH )
 diag ( CCFLAGS )
+
+diag ( CMAKE_C_FLAGS )
+diag ( CMAKE_CXX_FLAGS )
+diag ( CMAKE_CC_FLAGS )
