@@ -37,7 +37,7 @@ if ( PSI )
 	set ( OPT_FLAGS "${OPT_FLAGS} -DHAVE_PSI_INTERFACE")
 endif()
 
-
+include ( helpers )
 # fixme - do the way how galera originally determines it
 SET (GALERA_VER '3.35')
 SET (GALERA_REV 'XXXX')
@@ -46,11 +46,10 @@ message (STATUS "Signature: version: ${GALERA_VER}, revision: ${GALERA_REV}")
 
 set ( CC_FLAGS "${OPT_FLAGS}" )
 
-set (CMAKE_THREAD_PREFER_PTHREAD_FLAG ON)
+set ( CMAKE_THREAD_PREFER_PTHREAD_FLAG 1 )
+set ( CMAKE_THREAD_PREFER_PTHREAD 1 )
 find_package ( Threads REQUIRED )
-set ( EXTRA_LIBRARIES )
-list ( APPEND EXTRA_LIBRARIES ${CMAKE_THREAD_LIBS_INIT} )
-
+link_libraries("${CMAKE_THREAD_LIBS_INIT}")
 
 # Add paths is extra_sysroot argument was specified
 set ( EXTRA_SYSROOT "" CACHE PATH "a path to extra development environment (Fink, Homebrew, MacPorts, MinGW)" )
@@ -80,7 +79,7 @@ endif ()
 set ( CC_FLAGS "${CC_FLAGS} -fPIC -Wall -Wextra -Wno-unused-parameter" )
 
 set ( CMAKE_C_FLAGS "-std=c99 -fno-strict-aliasing -pipe ${CMAKE_C_FLAGS}" )
-set ( CMAKE_CXX_FLAGS "-pipe -Wno-long-long -Wno-deprecated -ansi ${CMAKE_CXX_FLAGS} ${CFLAGS}" )
+set ( CMAKE_CXX_FLAGS "-pipe -Wno-long-long -Wno-deprecated ${CMAKE_CXX_FLAGS} ${CFLAGS}" )
 
 if ( CMAKE_SYSTEM_NAME STREQUAL "Linux" )
 	message (STATUS "Build for linux...")
@@ -95,10 +94,10 @@ if ( NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" )
 	if ( NOT LIBRARIES_RT )
 		message (FATAL "rt library not found" )
 	endif()
-	link_libraries( LIBRARIES_RT )
+	link_libraries( ${LIBRARIES_RT} )
 endif ()
 
-include ( helpers )
+
 
 check_include_file ( "sys/epoll.h" HAVE_SYS_EPOLL_H )
 if ( HAVE_SYS_EPOLL_H )
@@ -108,20 +107,29 @@ endif ()
 check_headers ( "byteswap.h;endian.h;execinfo.h" )
 
 add_definitions ( "-DHAVE_STD_ARRAY" )
-add_definitions ( "-DHAVE_STD_SHARED_PTR" )
 add_definitions ( "-DHAVE_STD_UNORDERED_MAP" )
+
+include ( CheckIncludeFileCXX )
+
+CHECK_INCLUDE_FILE_CXX ( "boost/shared_ptr.hpp" HAVE_BOOST_SHARED_PTR_HPP )
+if ( HAVE_BOOST_SHARED_PTR_HPP )
+	add_definitions ( "-DHAVE_BOOST_SHARED_PTR_HPP" )
+else()
+	message(ERROR "Add '#include <algorithm>' to the top of galera/wsdb.cpp to make it work")
+	add_definitions ( "-DHAVE_STD_SHARED_PTR" )
+endif()
 
 if (WITH_BOOST)
 	add_definitions("-DBOOST_DATE_TIME_POSIX_TIME_STD_CONFIG=1")
 	find_package ( Boost COMPONENTS system OPTIONAL_COMPONENTS program_options )
-	link_libraries (Boost_system_LIBRARY)
+	link_libraries ( ${Boost_system_LIBRARY} )
 	#if (Boost_program_options_FOUND)
 	#	link_libraries ( Boost_program_options_LIBRARY )
 	#endif()
 endif()
 
 if ( WITH_BOOST_POOL )
-	check_include_file ( "boost/pool/pool_alloc.hpp" HAVE_BOOST_POOL_POOL_ALLOC_HPP )
+	CHECK_INCLUDE_FILE_CXX ( "boost/pool/pool_alloc.hpp" HAVE_BOOST_POOL_POOL_ALLOC_HPP )
 	if ( HAVE_BOOST_POOL_POOL_ALLOC_HPP )
 		add_definitions ("-DGALERA_USE_BOOST_POOL_ALLOC=1" )
 	endif()
@@ -134,8 +142,7 @@ endif ()
 
 find_package ( OpenSSL REQUIRED )
 link_libraries ( ${OPENSSL_LIBRARIES} )
-
-include ( CheckIncludeFileCXX )
+include_directories ( ${OPESSL_INCLUDE_DIR} )
 
 if (SYSTEM_ASIO)
 	CHECK_INCLUDE_FILE_CXX ( "asio.hpp" HAVE_ASIO_HDR )
@@ -192,7 +199,7 @@ if ( weffcpp )
 	SET (CMAKE_CXX_FLAGS "-Weffc++ ${CMAKE_CXX_FLAGS}")
 endif()
 
-SET ( CMAKE_CXX_FLAGS "${CMAKE_CXX_fLAGS} ${CC_FLAGS}")
+SET ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CC_FLAGS}")
 SET ( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CC_FLAGS}" )
 
 find_library ( LIBRARIES_M m )
@@ -208,14 +215,13 @@ diag ( CMAKE_SYSTEM_VERSION )
 diag ( CMAKE_SYSTEM_PROCESSOR )
 diag ( CMAKE_C_FLAGS )
 diag ( CMAKE_CXX_FLAGS )
-diag ( LINK_LIBRARIES )
 
 add_subdirectory ( galerautils )
-#add_subdirectory ( gcache )
-#add_subdirectory ( gcomm )
-#add_subdirectory ( gcs )
-#add_subdirectory ( galera )
-#add_subdirectory ( garb )
+add_subdirectory ( gcache )
+add_subdirectory ( gcomm )
+add_subdirectory ( gcs )
+add_subdirectory ( galera )
+add_subdirectory ( garb )
 
 #diag ( CMAKE_SYSTEM_NAME )
 #diag ( CMAKE_SYSTEM_VERSION )
