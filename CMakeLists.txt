@@ -88,7 +88,7 @@ if ( CMAKE_SYSTEM_NAME STREQUAL "Linux" )
 endif()
 add_definitions ("-DHAVE_COMMON_H")
 
-include_directories ("wsrep/src")
+include_directories ("${GALERA_SOURCE_DIR}/wsrep/src")
 
 if ( NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" )
 	find_library ( LIBRARIES_RT rt )
@@ -100,11 +100,12 @@ endif ()
 
 include ( helpers )
 
-ac_check_headers ( "sys/epoll.h;byteswap.h;endian.h;execinfo.h" )
-
+check_include_file ( "sys/epoll.h" HAVE_SYS_EPOLL_H )
 if ( HAVE_SYS_EPOLL_H )
 	add_definitions ( "-DGALERA_USE_GU_NETWORK" )
 endif ()
+
+check_headers ( "byteswap.h;endian.h;execinfo.h" )
 
 add_definitions ( "-DHAVE_STD_ARRAY" )
 add_definitions ( "-DHAVE_STD_SHARED_PTR" )
@@ -120,10 +121,19 @@ if (WITH_BOOST)
 endif()
 
 if ( WITH_BOOST_POOL )
-	ac_check_headers ( "boost/pool/pool_alloc.hpp" )
+	check_include_file ( "boost/pool/pool_alloc.hpp" HAVE_BOOST_POOL_POOL_ALLOC_HPP )
+	if ( HAVE_BOOST_POOL_POOL_ALLOC_HPP )
+		add_definitions ("-DGALERA_USE_BOOST_POOL_ALLOC=1" )
+	endif()
 	# fixme! that is switched off by default
 endif()
 
+if ( BREWPR )
+	SET ( OPENSSL_ROOT_DIR "/usr/local/opt/openssl" )
+endif ()
+
+find_package ( OpenSSL REQUIRED )
+link_libraries ( ${OPENSSL_LIBRARIES} )
 
 include ( CheckIncludeFileCXX )
 
@@ -153,28 +163,9 @@ if (NOT SYSTEM_ASIO)
 	endif()
 endif()
 
-if (BREWPR)
-SET ( OPENSSL_ROOT_DIR "/usr/local/opt/openssl" )
-endif()
-
-find_package ( openssl )
-find_library ( LIBRARIES_SSL ssl )
-if ( NOT LIBRARIES_SSL )
-	message ( FATAL "SSL support required but libssl was not found" )
-endif ()
-link_libraries ( ${OPENSSL_SSL_LIBRARY} )
-include_directories ( ${OPENSSL_INCLUDE_DIR} )
-
-find_library ( LIBRARIES_CRYPTO crypto )
-if ( NOT LIBRARIES_CRYPTO )
-	message ( FATAL "SSL support required libcrypto was not found" )
-endif ()
-link_libraries ( ${OPENSSL_CRYPTO_LIBRARY} )
-#link_libraries ( ${OPENSSL_SSL_LIBRARY} )
-
+# that is for CheckIncludeFileCxx (internally it links a test prog)
 populate_env()
-# that is necessary for checking header (it also link some libraries)
-set ( CMAKE_REQUIRED_LIBRARIES "${OPENSSL_SSL_LIBRARY};${OPENSSL_CRYPTO_LIBRARY}" )
+set ( CMAKE_REQUIRED_LIBRARIES "${OPENSSL_LIBRARIES}" )
 
 CHECK_INCLUDE_FILE_CXX ( "asio/ssl.hpp" HAVE_ASIO_SSL_HPP "${CMAKE_CXX_FLAGS} ${CC_FLAGS}" )
 if ( NOT HAVE_ASIO_SSL_HPP )
@@ -205,10 +196,31 @@ SET ( CMAKE_CXX_FLAGS "${CMAKE_CXX_fLAGS} ${CC_FLAGS}")
 SET ( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CC_FLAGS}" )
 
 find_library ( LIBRARIES_M m )
+link_libraries ( ${LIBRARIES_M} )
+
+#fixme! tests are not enabled now for simplicitly, todo it later.
+if ( DETERMINISTIC_TESTS )
+	set ($ENV{GALERA_TEST_DETERMINISTIC} 1)
+endif()
 
 diag ( CMAKE_SYSTEM_NAME )
 diag ( CMAKE_SYSTEM_VERSION )
 diag ( CMAKE_SYSTEM_PROCESSOR )
 diag ( CMAKE_C_FLAGS )
 diag ( CMAKE_CXX_FLAGS )
+diag ( LINK_LIBRARIES )
+
+add_subdirectory ( galerautils )
+#add_subdirectory ( gcache )
+#add_subdirectory ( gcomm )
+#add_subdirectory ( gcs )
+#add_subdirectory ( galera )
+#add_subdirectory ( garb )
+
+#diag ( CMAKE_SYSTEM_NAME )
+#diag ( CMAKE_SYSTEM_VERSION )
+#diag ( CMAKE_SYSTEM_PROCESSOR )
+#diag ( CMAKE_C_FLAGS )
+#diag ( CMAKE_CXX_FLAGS )
+#diag ( LINK_LIBRARIES )
 
