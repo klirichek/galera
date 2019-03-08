@@ -13,4 +13,4 @@ set (GCOMM_CHECK
 		)
 
 add_executable ( check_gcomm EXCLUDE_FROM_ALL ${GCOMM_CHECK} )
-target_link_libraries ( check_gcomm PRIVATE gcomm galerautilsxx galerautils ${LINKS} )
+target_link_libraries ( check_gcomm PRIVATE gcomm galerautilsxx galerautils ${LINKS_TST} ${LINKS} )

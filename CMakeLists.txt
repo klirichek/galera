@@ -204,7 +204,7 @@ set (LINKS_TST "")
 
 # m.b. this is need only for tests?
 find_library ( LIBRARIES_CHECK check )
-list ( APPEND LINKS "${LIBRARIES_CHECK}" )
+#list ( APPEND LINKS "${LIBRARIES_CHECK}" )
 list ( APPEND LINKS_TST "${LIBRARIES_CHECK}" )
 
 find_library ( LIBRARIES_M m )
@@ -213,7 +213,7 @@ list ( APPEND LINKS "${CMAKE_THREAD_LIBS_INIT}" )
 # m.b. this is need only for tests?
 find_library ( LIBRARIES_SUBUNIT subunit )
 if ( LIBRARIES_SUBUNIT )
-	list ( APPEND LINKS "${LIBRARIES_SUBUNIT}" )
+#	list ( APPEND LINKS "${LIBRARIES_SUBUNIT}" )
 	list ( APPEND LINKS_TST "${LIBRARIES_SUBUNIT}" )
 endif()
 
@@ -222,18 +222,16 @@ if ( DETERMINISTIC_TESTS )
 	set ($ENV{GALERA_TEST_DETERMINISTIC} 1)
 endif()
 
-diag ( CMAKE_SYSTEM_NAME )
-diag ( CMAKE_SYSTEM_VERSION )
-diag ( CMAKE_SYSTEM_PROCESSOR )
-diag ( CMAKE_C_FLAGS )
-diag ( CMAKE_CXX_FLAGS )
-
 add_subdirectory ( galerautils )
 add_subdirectory ( gcache )
 add_subdirectory ( gcomm )
 add_subdirectory ( gcs )
 add_subdirectory ( galera )
 add_subdirectory ( garb )
+
+add_library ( galera_smm SHARED $<TARGET_OBJECTS:mmgalera> )
+target_link_libraries ( galera_smm PRIVATE gcs gcomm gcache galerautils galerautilsxx )
+
 
 #diag ( CMAKE_SYSTEM_NAME )
 #diag ( CMAKE_SYSTEM_VERSION )

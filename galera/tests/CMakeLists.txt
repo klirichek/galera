@@ -17,4 +17,4 @@ add_executable ( galera_check EXCLUDE_FROM_ALL
 		saved_state_check.cpp
 		)
 
-target_link_libraries ( galera_check gcache galerapp gcs gcomm galerautilsxx galerautils ${LINKS} )
+target_link_libraries ( galera_check gcache galerapp gcs gcomm galerautilsxx galerautils ${LINKS_TST} ${LINKS} )

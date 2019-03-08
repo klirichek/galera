@@ -1,7 +1,7 @@
 include_directories ( "${GALERA_SOURCE_DIR}" )
 include_directories ( "${GALERA_SOURCE_DIR}/galerautils/src" )
 
-link_libraries ( galerautilsxx galerautils ${LINKS} )
+link_libraries ( galerautilsxx galerautils ${LINKS_TST} ${LINKS} )
 
 add_executable ( gu_tests EXCLUDE_FROM_ALL
 		gu_tests.c
