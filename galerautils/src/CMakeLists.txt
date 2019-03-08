@@ -1,3 +1,5 @@
+include_directories ( "${GALERA_SOURCE_DIR}" )
+
 SET ( GALERAUTILS_SOURCES
 		gu_abort.c
 		gu_dbug.c
@@ -20,21 +22,15 @@ SET ( GALERAUTILS_SOURCES
 		gu_init.c
 		)
 
-include_directories ( "${GALERA_SOURCE_DIR}" )
 
-add_library ( galeracommon STATIC ${GALERAUTILS_SOURCES} )
+add_library ( crc32 OBJECT ${GALERA_SOURCE_DIR}/www.evanjones.ca/crc32c.c )
 
-add_definitions("-DWITH_GALERA")
+target_compile_definitions ( crc32 PUBLIC WITH_GALERA )
 if ( CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" )
-	SET ( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2" )
-endif()
+	target_compile_options( crc32 PRIVATE "-msse4.2" )
+endif ()
 
-add_library ( galerautils STATIC ${GALERA_SOURCE_DIR}/www.evanjones.ca/crc32c.c )
-target_link_libraries ( galerautils galeracommon )
-
-
-include_directories ( "${GALERA_SOURCE_DIR}/common" )
-SET ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-old-style-cast" )
+add_library ( galerautils STATIC ${GALERAUTILS_SOURCES} $<TARGET_OBJECTS:crc32>)
 
 SET ( GALERAUTILSXX_SOURCES
 		gu_vlq.cpp
@@ -59,11 +55,10 @@ SET ( GALERAUTILSXX_SOURCES
 		gu_asio.cpp
 		gu_debug_sync.cpp
 		gu_thread.cpp
+		gu_hexdump.cpp
+		gu_uuid.cpp
 		)
 
-add_library ( gu_hexdumpxx STATIC gu_hexdump.cpp )
-add_library ( gu_uuidxx STATIC gu_uuid.cpp )
-
 add_library ( galerautilsxx STATIC ${GALERAUTILSXX_SOURCES} )
-target_link_libraries ( galerautilsxx gu_hexdumpxx )
-target_link_libraries ( galerautilsxx gu_uuidxx )
+target_compile_options (galerautilsxx PRIVATE "-Wno-old-style-cast")
+target_include_directories(galerautilsxx PRIVATE "${GALERA_SOURCE_DIR}/common")

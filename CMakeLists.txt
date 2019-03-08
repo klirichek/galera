@@ -45,11 +45,12 @@ SET (GALERA_REV 'XXXX')
 message (STATUS "Signature: version: ${GALERA_VER}, revision: ${GALERA_REV}")
 
 set ( CC_FLAGS "${OPT_FLAGS}" )
+set ( LINKS "" )
 
 set ( CMAKE_THREAD_PREFER_PTHREAD_FLAG 1 )
 set ( CMAKE_THREAD_PREFER_PTHREAD 1 )
 find_package ( Threads REQUIRED )
-link_libraries("${CMAKE_THREAD_LIBS_INIT}")
+list (APPEND LINKS "${CMAKE_THREAD_LIBS_INIT}")
 
 # Add paths is extra_sysroot argument was specified
 set ( EXTRA_SYSROOT "" CACHE PATH "a path to extra development environment (Fink, Homebrew, MacPorts, MinGW)" )
@@ -94,7 +95,7 @@ if ( NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" )
 	if ( NOT LIBRARIES_RT )
 		message ( FATAL_ERROR "rt library not found" )
 	endif()
-	link_libraries( ${LIBRARIES_RT} )
+	list ( APPEND LINKS "${LIBRARIES_RT}" )
 endif ()
 
 check_include_file ( "sys/epoll.h" HAVE_SYS_EPOLL_H )
@@ -120,7 +121,7 @@ endif()
 if (WITH_BOOST)
 	add_definitions("-DBOOST_DATE_TIME_POSIX_TIME_STD_CONFIG=1")
 	find_package ( Boost COMPONENTS system )
-	link_libraries ( ${Boost_system_LIBRARY} )
+	list ( APPEND LINKS "${Boost_system_LIBRARY}" )
 endif()
 
 if ( WITH_BOOST_POOL )
@@ -136,13 +137,13 @@ if ( BREWPR )
 endif ()
 
 find_package ( OpenSSL REQUIRED )
-link_libraries ( ${OPENSSL_LIBRARIES} )
+list ( APPEND LINKS "${OPENSSL_LIBRARIES}" )
 include_directories ( ${OPENSSL_INCLUDE_DIR} )
 
-if (SYSTEM_ASIO)
-	CHECK_INCLUDE_FILE_CXX ( "asio.hpp" HAVE_ASIO_HDR )
+if ( SYSTEM_ASIO )
+	CHECK_INCLUDE_FILE_CXX ( "asio.hpp" HAVE_ASIO_HPP )
 	CheckSystemASIOVersion ( ASIO )
-	if (ASIO AND HAVE_ASIO_HDR)
+	if (ASIO AND HAVE_ASIO_HPP)
 		add_definitions ( "-DHAVE_ASIO_HPP" )
 	else()
 		set (SYSTEM_ASIO FALSE)
@@ -152,15 +153,16 @@ endif()
 
 # that is for CheckIncludeFileCxx (internally it links a test prog)
 populate_env ()
-set ( CMAKE_REQUIRED_LIBRARIES "${OPENSSL_LIBRARIES}" )
+set ( CMAKE_REQUIRED_LIBRARIES "${LINKS}" )
 
 if (NOT SYSTEM_ASIO)
 	# Make sure that -Iasio goes before other paths (e.g. -I/usr/local/include)
 	# that may contain a system wide installed asio. We should use the bundled
 	# asio if "scons system_asio=0" is specified. Thus use Prepend().
 	include_directories( BEFORE "${GALERA_SOURCE_DIR}/asio")
-	CHECK_INCLUDE_FILE_CXX ( "asio.hpp" HAVE_ASIO_HDRINT )
-	if (HAVE_ASIO_HDRINT)
+	CHECK_INCLUDE_FILE_CXX ( "asio.hpp" HAVE_ASIO_HPP_NSYS )
+	if ( HAVE_ASIO_HPP_NSYS )
+		set (HAVE_ASIO_HPP 1)
 		add_definitions ( "-DHAVE_ASIO_HPP" )
 	else()
 		message (FATAL_ERROR "asio headers not found or not usable")
@@ -169,7 +171,7 @@ endif()
 
 
 populate_env ()
-set ( CMAKE_REQUIRED_LIBRARIES "${OPENSSL_LIBRARIES}" )
+set ( CMAKE_REQUIRED_LIBRARIES "${LINKS}" )
 CHECK_INCLUDE_FILE_CXX ( "asio/ssl.hpp" HAVE_ASIO_SSL_HPP "${CMAKE_CXX_FLAGS} ${CC_FLAGS}" )
 if ( NOT HAVE_ASIO_SSL_HPP )
 	message ( STATUS "SSL support required but asio/ssl.hpp was not found or not usable" )
@@ -198,8 +200,22 @@ endif()
 SET ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CC_FLAGS}")
 SET ( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CC_FLAGS}" )
 
+set (LINKS_TST "")
+
+# m.b. this is need only for tests?
+find_library ( LIBRARIES_CHECK check )
+list ( APPEND LINKS "${LIBRARIES_CHECK}" )
+list ( APPEND LINKS_TST "${LIBRARIES_CHECK}" )
+
 find_library ( LIBRARIES_M m )
-link_libraries ( ${LIBRARIES_M} )
+list ( APPEND LINKS "${CMAKE_THREAD_LIBS_INIT}" )
+
+# m.b. this is need only for tests?
+find_library ( LIBRARIES_SUBUNIT subunit )
+if ( LIBRARIES_SUBUNIT )
+	list ( APPEND LINKS "${LIBRARIES_SUBUNIT}" )
+	list ( APPEND LINKS_TST "${LIBRARIES_SUBUNIT}" )
+endif()
 
 #fixme! tests are not enabled now for simplicitly, todo it later.
 if ( DETERMINISTIC_TESTS )

@@ -1,3 +1,8 @@
+include_directories ( "${GALERA_SOURCE_DIR}" )
+include_directories ( "${GALERA_SOURCE_DIR}/common" )
+include_directories ( "${GALERA_SOURCE_DIR}/galerautils/src" )
+include_directories ( "${GALERA_SOURCE_DIR}/gcomm/src" )
+
 SET ( LIBGCOMM_SOURCES
 		conf.cpp
 		defaults.cpp
@@ -19,13 +24,6 @@ SET ( LIBGCOMM_SOURCES
 		socket.cpp
 		)
 
-include_directories ( "${GALERA_SOURCE_DIR}" )
-include_directories ( "${GALERA_SOURCE_DIR}/common" )
-include_directories ( "${GALERA_SOURCE_DIR}/galerautils/src" )
-include_directories ( "${GALERA_SOURCE_DIR}/gcomm/src" )
-
-SET ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing" )
-
 SET ( LIBCOMM_ASIO_SOURCES "")
 if ( HAVE_ASIO_HPP )
 	SET ( LIBCOMM_ASIO_SOURCES
@@ -35,5 +33,5 @@ if ( HAVE_ASIO_HPP )
 			)
 endif()
 
-
 add_library ( gcomm STATIC ${LIBGCOMM_SOURCES} ${LIBCOMM_ASIO_SOURCES})
+target_compile_options ( gcomm PRIVATE "-fno-strict-aliasing" )

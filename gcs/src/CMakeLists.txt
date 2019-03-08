@@ -1,18 +1,16 @@
-
 include_directories ( "${GALERA_SOURCE_DIR}/common" )
 include_directories ( "${GALERA_SOURCE_DIR}/galerautils/src" )
 include_directories ( "${GALERA_SOURCE_DIR}/gcomm/src" )
 include_directories ( "${GALERA_SOURCE_DIR}/gcache/src" )
 
-add_definitions ( "-DGCS_USE_GCOMM" )
-add_definitions ( "-DGALERA_LOG_H_ENABLE_CXX" )
-
 string ( REPLACE "-Wold-style-cast" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
 string ( REPLACE "-Weffc++" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
-
 string ( REPLACE "-pedantic" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
-SET ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-field-initializers" )
-SET ( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-variadic-macros" )
+
+add_compile_options ( "-Wno-missing-field-initializers" )
+add_compile_options ( "-Wno-variadic-macros" )
+add_compile_definitions ( GCS_USE_GCOMM )
+add_compile_definitions ( GALERA_LOG_H_ENABLE_CXX )
 
 SET ( LIBGCS_SOURCES
 		gcs_params.cpp
@@ -36,6 +34,8 @@ SET ( LIBGCS_SOURCES
 
 add_library ( gcs STATIC ${LIBGCS_SOURCES} )
 
-add_definitions ( "-DGCS_FOR_GARB" )
 add_library ( gcs4garb STATIC ${LIBGCS_SOURCES} )
+target_compile_definitions ( gcs4garb PRIVATE GCS_FOR_GARB )
 
+add_executable ( gcs_test EXCLUDE_FROM_ALL gcs_test.cpp )
+target_link_libraries ( gcs_test PRIVATE gcs gcache gcomm galerautilsxx galerautils ${LINKS} )
