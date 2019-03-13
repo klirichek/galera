@@ -27,6 +27,8 @@ OPTION ( BUILD_TESTING "internal tests" OFF )
 OPTION ( DETERMINISTIC_TESTS "deterministics tesets" OFF )
 OPTION ( STRICT_BUILD_FLAGS "Strict build flags" ON )
 OPTION ( PSI "Psi flag option" OFF )
+set ( WSREP_PATH "" CACHE
+		STRING "Path to Write Set Replication API specification sources." )
 
 # separate property sets for C and CXX
 SET ( c_flags "" )
@@ -54,8 +56,8 @@ endif()
 
 
 # fixme - do the way how galera originally determines it
-SET (GALERA_VER '3.35')
-SET (GALERA_REV 'XXXX')
+SET (GALERA_VER "3.35")
+get_galera_revision ( GALERA_REV )
 
 message (STATUS "Signature: version: ${GALERA_VER}, revision: ${GALERA_REV}")
 
@@ -103,7 +105,24 @@ if ( CMAKE_SYSTEM_NAME STREQUAL "Linux" )
 endif()
 add_compile_definitions ( HAVE_COMMON_H )
 
-include_directories ("${GALERA_SOURCE_DIR}/wsrep/src")
+# check the wsrep; extract API version from there.
+if ( EXISTS "${WSREP_PATH}/wsrep_api.h" )
+	include_directories ("${WSREP_PATH}")
+	set (WSREP_API "${WSREP_PATH}/wsrep_api.h" )
+elseif ( EXISTS "${GALERA_SOURCE_DIR}/wsrep/src/wsrep_api.h" )
+	include_directories ( "${GALERA_SOURCE_DIR}/wsrep/src" )
+	set ( WSREP_API "${GALERA_SOURCE_DIR}/wsrep/src/wsrep_api.h" )
+else()
+	message ( FATAL_ERROR
+"********************************************************************************
+ERROR: cannot find wsrep_api. If you build from git clone, don't forget to initialize and update submodules, wsrep will be cloned into wsrep/src source folder. It you don't know how - `git submodule init` and then `git submodule update --remote` should help.
+If you intend to use it from another place, provide the path in WSREP_PATH parameter. The sources could be cloned, from https://github.com/percona/wsrep-API.git or you may have your own source.
+WSREP_INTERFACE_VERSION will be used as SONAME version for resulting library.
+********************************************************************************" )
+endif()
+
+get_galera_api_version( "${WSREP_API}" WSREP_INTERFACE_VERSION )
+
 
 if ( NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT MSVC )
 	find_library ( LIBRARIES_RT rt )
@@ -258,16 +277,12 @@ add_subdirectory ( garb )
 
 add_library ( galera_smm SHARED $<TARGET_OBJECTS:mmgalera> )
 target_link_libraries ( galera_smm PRIVATE gcs galerapp gcomm gcache galerautilsxx ${LINKS} )
+set_target_properties ( galera_smm PROPERTIES VERSION ${GALERA_VER} )
+set_target_properties ( galera_smm PROPERTIES SOVERSION "${WSREP_INTERFACE_VERSION}" )
 
 install_dbg ( galera_smm ${CMAKE_CURRENT_BINARY_DIR} )
 
-set ( targets_export_name "galera_smm" )
 
-install ( TARGETS galera_smm
-		EXPORT ${targets_export_name}
-		RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-		ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-		LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT APPLICATIONS)
 
 
 diag ( CMAKE_CXX_COMPILER_ID )
