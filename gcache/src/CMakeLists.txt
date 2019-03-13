@@ -14,7 +14,7 @@ SET ( GCACHE_SOURCES
 add_library ( gcache STATIC ${GCACHE_SOURCES} )
 target_compile_options ( gcache PRIVATE ${cc_flags} ${cxx_flags} )
 
-if ( TESTS )
+if ( BUILD_TESTING )
 	add_executable ( test_gcache test.cpp )
 	target_link_libraries ( test_gcache PUBLIC gcache galerautilsxx ${LINKS} )
 	target_compile_options ( test_gcache PUBLIC ${cc_flags} ${cxx_flags} )

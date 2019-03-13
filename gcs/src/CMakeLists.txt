@@ -8,7 +8,7 @@ list ( REMOVE_ITEM gcs_compile_options -Wold-style-cast )
 list ( REMOVE_ITEM gcs_compile_options -Weffc++ )
 list ( REMOVE_ITEM gcs_compile_options -pedantic )
 
-if ( TESTS )
+if ( BUILD_TESTING )
 	add_subdirectory ( unit_tests )
 endif()
 
@@ -44,7 +44,7 @@ add_library ( gcs4garb STATIC ${LIBGCS_SOURCES} )
 target_compile_definitions ( gcs4garb PUBLIC GCS_FOR_GARB GCS_USE_GCOMM )
 target_compile_options ( gcs4garb PRIVATE ${gcs_compile_options} )
 
-if ( TESTS )
+if ( BUILD_TESTING )
 	add_executable ( gcs_test gcs_test.cpp )
 	target_link_libraries ( gcs_test PRIVATE gcs gcache gcomm galerautilsxx ${LINKS} )
 	target_compile_options ( gcs_test PRIVATE ${gcs_compile_options} )

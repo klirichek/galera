@@ -1,4 +1,9 @@
 cmake_minimum_required ( VERSION 3.12 )
+
+IF ( POLICY CMP0075 )
+	CMAKE_POLICY ( SET CMP0075 NEW )
+ENDIF ()
+
 project ( GALERA CXX C )
 
 set ( CMAKE_CXX_STANDARD 11 )
@@ -18,7 +23,7 @@ set ( DEBUG_LEVEL -1 CACHE INT "debug build with optimization level n" )
 OPTION ( WITH_BOOST "disable or enable boost libraries" ON )
 OPTION ( WITH_BOOST_POOL "use or not use boost pool allocator" OFF )
 OPTION ( SYSTEM_ASIO "use system asio library, if available" TRUE )
-OPTION ( TESTS "internal tests" OFF )
+OPTION ( BUILD_TESTING "internal tests" OFF )
 OPTION ( DETERMINISTIC_TESTS "deterministics tesets" OFF )
 OPTION ( STRICT_BUILD_FLAGS "Strict build flags" ON )
 OPTION ( PSI "Psi flag option" OFF )
@@ -55,12 +60,13 @@ SET (GALERA_REV 'XXXX')
 message (STATUS "Signature: version: ${GALERA_VER}, revision: ${GALERA_REV}")
 
 set ( LINKS "" )
+set ( LINKS_TST "" )
 
 if ( NOT MSVC )
 set ( CMAKE_THREAD_PREFER_PTHREAD_FLAG 1 )
 set ( CMAKE_THREAD_PREFER_PTHREAD 1 )
 find_package ( Threads REQUIRED )
-list (APPEND LINKS "${CMAKE_THREAD_LIBS_INIT}")
+add_main_library ("${CMAKE_THREAD_LIBS_INIT}")
 endif()
 
 # Add paths is extra_sysroot argument was specified
@@ -104,7 +110,8 @@ if ( NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT MSVC )
 	if ( NOT LIBRARIES_RT )
 		message ( FATAL_ERROR "rt library not found" )
 	endif()
-	list ( APPEND LINKS "${LIBRARIES_RT}" )
+
+	add_main_library ("${LIBRARIES_RT}" )
 	mark_as_advanced ( LIBRARIES_RT )
 endif ()
 
@@ -124,7 +131,7 @@ include ( CheckIncludeFileCXX )
 if ( WITH_BOOST )
 	add_compile_definitions ( BOOST_DATE_TIME_POSIX_TIME_STD_CONFIG=1 )
 	find_package ( Boost COMPONENTS system )
-	list ( APPEND LINKS "${Boost_system_LIBRARY}" )
+	add_main_library ( "${Boost_system_LIBRARY}" )
 endif ()
 
 if ( WITH_BOOST_POOL )
@@ -140,7 +147,7 @@ if ( BREWPR )
 endif ()
 
 find_package ( OpenSSL REQUIRED )
-list ( APPEND LINKS "${OPENSSL_LIBRARIES}" )
+add_main_library ( "${OPENSSL_LIBRARIES}" )
 include_directories ( ${OPENSSL_INCLUDE_DIR} )
 
 # these two internals came from finding openssl
@@ -157,15 +164,12 @@ if ( SYSTEM_ASIO )
 	endif()
 endif()
 
-# that is for CheckIncludeFileCxx (internally it links a test prog)
-populate_env ()
-set ( CMAKE_REQUIRED_LIBRARIES "${LINKS}" )
-
 if (NOT SYSTEM_ASIO)
 	# Make sure that -Iasio goes before other paths (e.g. -I/usr/local/include)
 	# that may contain a system wide installed asio. We should use the bundled
 	# asio if "scons system_asio=0" is specified. Thus use Prepend().
 	include_directories( BEFORE "${GALERA_SOURCE_DIR}/asio")
+	populate_env ()
 	CHECK_INCLUDE_FILE_CXX ( "asio.hpp" HAVE_ASIO_HPP_NSYS )
 	if ( HAVE_ASIO_HPP_NSYS )
 		set (HAVE_ASIO_HPP 1)
@@ -176,7 +180,6 @@ if (NOT SYSTEM_ASIO)
 endif()
 
 populate_env ()
-set ( CMAKE_REQUIRED_LIBRARIES "${LINKS}" )
 CHECK_INCLUDE_FILE_CXX ( "asio/ssl.hpp" HAVE_ASIO_SSL_HPP "${CMAKE_CXX_FLAGS}" )
 if ( NOT HAVE_ASIO_SSL_HPP )
 	message ( STATUS "SSL support required but asio/ssl.hpp was not found or not usable" )
@@ -207,21 +210,23 @@ if ( weffcpp )
 	add_cxx_options ( "-Weffc++" )
 endif()
 
-set (LINKS_TST "")
 
-if ( TESTS )
+if ( BUILD_TESTING )
 	include ( CTest )
 
 	find_library ( LIBRARIES_CHECK check )
-	list ( APPEND LINKS_TST "${LIBRARIES_CHECK}" )
+	if ( NOT LIBRARIES_CHECK )
+		message (FATAL_ERROR "Library 'check' is not found, aborting. Consider build without testing.")
+	endif()
+	add_test_library ( "${LIBRARIES_CHECK}" )
 	mark_as_advanced( LIBRARIES_CHECK )
 
 	find_library ( LIBRARIES_SUBUNIT subunit )
 	if ( LIBRARIES_SUBUNIT )
-		list ( APPEND LINKS_TST "${LIBRARIES_SUBUNIT}" )
+		add_test_library ( "${LIBRARIES_SUBUNIT}" )
 	endif ()
 	mark_as_advanced ( LIBRARIES_SUBUNIT )
-endif ( TESTS )
+endif ( BUILD_TESTING )
 
 find_library ( LIBRARIES_M m )
 list ( APPEND LINKS "${CMAKE_THREAD_LIBS_INIT}" )

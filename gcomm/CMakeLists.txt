@@ -1,4 +1,4 @@
 add_subdirectory ( src )
-if ( TESTS )
+if ( BUILD_TESTING )
 	add_subdirectory ( test )
 endif()

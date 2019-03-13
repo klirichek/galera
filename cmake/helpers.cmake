@@ -24,18 +24,14 @@ function ( check_headers _HEADERS )
 		string ( TOUPPER "${_it}" _it )
 		check_include_file ( "${it}" "HAVE_${_it}" )
 		if ( HAVE_${_it} )
-			add_definitions ("-DHAVE_${_it}")
+			add_compile_definitions ("HAVE_${_it}")
 		endif()
 	endforeach ( it )
 endfunction ( check_headers )
 
 # old cmake doesn't understand $<TARGET_FILE:${BINARYNAME}>
 function ( INSTALL_BINARY BINARYNAME )
-	if ( CMAKE_VERSION VERSION_LESS 3.5.1 )
-		INSTALL ( TARGETS ${BINARYNAME} RUNTIME DESTINATION ${BINDIR} COMPONENT APPLICATIONS )
-	else ()
 		INSTALL ( PROGRAMS $<TARGET_FILE:${BINARYNAME}> DESTINATION ${BINDIR} COMPONENT APPLICATIONS )
-	endif ()
 endfunction()
 
 function ( GET_SONAME RAWLIB OUTVAR )
@@ -168,7 +164,6 @@ class A {};
 class B : public A {};
 int main() { return 0; }
 " )
-
 	set (OLDFLAGS "${CMAKE_CXX_FLAGS}")
 	set ( CMAKE_CXX_FLAGS "-Weffc++ -Werror ${CMAKE_CXX_FLAGS}")
 	message ( STATUS "Checking whether to enable -Weffc++" )
@@ -182,7 +177,6 @@ function( CheckSetEcdhAuto OUTVAR )
 #include <openssl/ssl.h>
 int main() { SSL_CTX* ctx=NULL; return !SSL_CTX_set_ecdh_auto(ctx, 1); }
 " )
-
 	message ( STATUS "Checking for SSL_CTX_set_ecdh_auto()" )
 	CHECK_CXX_SOURCE_COMPILES ( "${_test_source}" ${OUTVAR}__res_ )
 	set ( "${OUTVAR}" "${${OUTVAR}__res_}" PARENT_SCOPE )
@@ -201,10 +195,9 @@ endfunction()
 
 
 function (populate_env)
-	set ( CMAKE_REQUIRED_FLAGS "${CC_FLAGS}" )
+	set ( CMAKE_REQUIRED_FLAGS "${cc_flags}" )
 	get_property ( REQUIRED_DEFINITIONS DIRECTORY PROPERTY COMPILE_DEFINITIONS )
 	get_property ( CMAKE_REQUIRED_INCLUDES DIRECTORY PROPERTY INCLUDE_DIRECTORIES )
-	get_property ( CMAKE_REQUIRED_LIBRARIES GLOBAL PROPERTY LINK_LIBRARIES )
 	set ( CMAKE_REQUIRED_DEFINITIONS "" )
 	FOREACH ( def ${REQUIRED_DEFINITIONS} )
 		LIST ( APPEND CMAKE_REQUIRED_DEFINITIONS "-D${def}" )
@@ -213,7 +206,7 @@ function (populate_env)
 	set ( CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}" PARENT_SCOPE )
 	set ( CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES}" PARENT_SCOPE )
 	set ( CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS}" PARENT_SCOPE )
-	set ( CMAKE_REQUIRED_LIBRARIES "${CMAKE_REQUIRED_LIBRARIES}" PARENT_SCOPE )
+	set ( CMAKE_REQUIRED_LIBRARIES "${LINKS}" PARENT_SCOPE )
 endfunction()
 
 function ( show_options target )
@@ -242,4 +235,15 @@ endfunction()
 function( add_common_options options )
 	list (APPEND cc_flags ${options} )
 	set ( cc_flags ${cc_flags} PARENT_SCOPE )
+endfunction()
+
+function( add_main_library library )
+	list ( APPEND LINKS ${library} )
+	set ( LINKS ${LINKS} PARENT_SCOPE )
+
+endfunction()
+
+function( add_test_library library )
+	list ( APPEND LINKS_TST ${library} )
+	set ( LINKS_TST ${LINKS_TST} PARENT_SCOPE )
 endfunction()
