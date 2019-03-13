@@ -67,6 +67,17 @@ CentOS/RHEL one needs to:
 
 Then proceed as described above.
 
+BUILDING with CMake build system
+
+That is quite faster then with scons.
+You need cmake min v >= 3.12. Visit cmake.org to achieve one; usual binary tarball
+should be enough (you even don't need to install it globally).
+If you're going just to compile galera-smm and garbd it is enough to have:
+on Debian: libssl-dev, libboost-system-dev, libboost-program-options-dev
+on Redhat: openssl-devel boost-devel
+If you want full installation with tests you also need check (check-devel) and may be
+subunit (libsubunit-dev). For testing you have to build with -DBUILD_TESTING=1,
+to run tests invoke ctest.
 
 For more information, see:
 * Codership mailing list: http://groups.google.com/group/codership-team
