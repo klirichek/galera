@@ -124,7 +124,18 @@ check_headers ( "byteswap.h;endian.h;execinfo.h" )
 
 add_compile_definitions ( HAVE_STD_ARRAY )
 add_compile_definitions ( HAVE_STD_UNORDERED_MAP )
-add_compile_definitions ( HAVE_STD_SHARED_PTR )
+
+CheckStdSharedPtr ( HAVE_STD_SHARED_PTR )
+if ( HAVE_STD_SHARED_PTR )
+	add_compile_definitions ( HAVE_STD_SHARED_PTR )
+else ()
+	CheckTr1SharedPtr ( HAVE_BOOST_SHARED_PTR_HPP )
+	if ( HAVE_BOOST_SHARED_PTR_HPP )
+		add_compile_definitions ( HAVE_BOOST_SHARED_PTR_HPP )
+	else()
+		message ( FATAL_ERROR "No shared ptr available")
+	endif()
+endif ()
 
 include ( CheckIncludeFileCXX )
 

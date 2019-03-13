@@ -182,6 +182,27 @@ int main() { SSL_CTX* ctx=NULL; return !SSL_CTX_set_ecdh_auto(ctx, 1); }
 	set ( "${OUTVAR}" "${${OUTVAR}__res_}" PARENT_SCOPE )
 endfunction()
 
+function( CheckStdSharedPtr OUTVAR )
+	set ( _test_source "
+#include <boost/function.hpp>
+#include <memory>
+int main() { std::shared_ptr<int> x; auto y = boost::get_pointer(x); return 0; }
+" )
+	message ( STATUS "Checking for std::shared_ptr is usable ..." )
+	CHECK_CXX_SOURCE_COMPILES ( "${_test_source}" ${OUTVAR}__res_ )
+	set ( "${OUTVAR}" "${${OUTVAR}__res_}" PARENT_SCOPE )
+endfunction()
+
+function( CheckTr1SharedPtr OUTVAR )
+	set ( _test_source "
+#include <tr1/memory>
+int main() { int n; std::tr1::shared_ptr<int> p(&n); return 0; }
+" )
+	message ( STATUS "Checking for std::tr1::shared_ptr ..." )
+	CHECK_CXX_SOURCE_COMPILES ( "${_test_source}" ${OUTVAR}__res_ )
+	set ( "${OUTVAR}" "${${OUTVAR}__res_}" PARENT_SCOPE )
+endfunction()
+
 function( CheckSetTmpEcdh OUTVAR )
 	set ( _test_source "
 #include <openssl/ssl.h>
