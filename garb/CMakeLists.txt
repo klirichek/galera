@@ -23,7 +23,7 @@ set ( GARB_HEADERS
 		garb_recv_loop.hpp
 		)
 
-add_executable ( garbd ${GARB_SOURCES} ${GARB_HEADERS})
+add_executable ( garbd ${GARB_SOURCES} ${GARB_HEADERS} )
 
 if ( WITH_BOOST )
 	find_package ( Boost COMPONENTS program_options )
@@ -34,5 +34,8 @@ endif ()
 target_link_libraries ( garbd gcs4garb gcomm galerautilsxx ${LINKS} )
 target_compile_options ( garbd PRIVATE ${cc_flags} ${cxx_flags} )
 
-install_dbg ( garbd )
+
+if ( SPLIT_SYMBOLS )
+	install_dbg ( garbd )
+endif()
 install ( TARGETS garbd RUNTIME DESTINATION bin COMPONENT APPLICATIONS )

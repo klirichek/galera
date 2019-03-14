@@ -279,16 +279,10 @@ target_link_libraries ( galera_smm PRIVATE gcs galerapp gcomm gcache galerautils
 #set_target_properties ( galera_smm PROPERTIES VERSION ${GALERA_VER} )
 set_target_properties ( galera_smm PROPERTIES SOVERSION "${WSREP_INTERFACE_VERSION}" )
 
-install_dbg ( galera_smm ${CMAKE_CURRENT_BINARY_DIR} )
-
-
-
-
 diag ( CMAKE_CXX_COMPILER_ID )
-diag ( STRICT_BUILD_FLAGS )
 
-SET ( LIBDIR ${CMAKE_INSTALL_LIBDIR} )
-SET ( LOCALSTATEDIR ${CMAKE_INSTALL_FULL_LOCALSTATEDIR} )
-SET ( DATADIR "${LOCALSTATEDIR}/data" )
-SET ( SHAREDIR "${CMAKE_INSTALL_DATADIR}" )
-
+if ( SPLIT_SYMBOLS )
+	install_dbg ( galera_smm )
+endif ()
+install ( TARGETS galera_smm LIBRARY DESTINATION lib COMPONENT APPLICATIONS )
+include (CPack)

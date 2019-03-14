@@ -29,67 +29,6 @@ function ( check_headers _HEADERS )
 	endforeach ( it )
 endfunction ( check_headers )
 
-# old cmake doesn't understand $<TARGET_FILE:${BINARYNAME}>
-function ( INSTALL_BINARY BINARYNAME )
-		INSTALL ( PROGRAMS $<TARGET_FILE:${BINARYNAME}> DESTINATION ${BINDIR} COMPONENT APPLICATIONS )
-endfunction()
-
-function ( GET_SONAME RAWLIB OUTVAR )
-	if ( NOT MSVC )
-		if ( APPLE )
-			GET_FILENAME_COMPONENT ( _OUTVAR ${RAWLIB} NAME )
-			set ( "${OUTVAR}" "${_OUTVAR}" PARENT_SCOPE )
-		else()
-			if ( NOT DEFINED CMAKE_OBJDUMP )
-				find_package ( BinUtils QUIET )
-			endif ()
-			if ( NOT DEFINED CMAKE_OBJDUMP )
-				find_program ( CMAKE_OBJDUMP objdump )
-			endif ()
-			mark_as_advanced ( CMAKE_OBJDUMP BinUtils_DIR )
-			execute_process ( COMMAND "${CMAKE_OBJDUMP}" -p "${RAWLIB}"
-					WORKING_DIRECTORY "${SOURCE_DIR}"
-					RESULT_VARIABLE res
-					OUTPUT_VARIABLE _CONTENT
-					ERROR_QUIET
-					OUTPUT_STRIP_TRAILING_WHITESPACE )
-
-			STRING ( REGEX REPLACE "\n" ";" _CONTENT "${_CONTENT}" )
-			FOREACH ( LINE ${_CONTENT} )
-				IF ( "${LINE}" MATCHES "^[ \t]+SONAME[ \t]+(.*)" )
-					set ( "${OUTVAR}" "${CMAKE_MATCH_1}" PARENT_SCOPE)
-				endif ()
-			endforeach ()
-		endif()
-	endif()
-endfunction()
-
-# windows case. The pdbs are located in bin/config/*.pdb
-function( __install_win_dbg BINARYNAME )
-	set ( PDB_PATH "${CMAKE_CURRENT_BINARY_DIR}/\${CMAKE_INSTALL_CONFIG_NAME}" )
-	INSTALL ( FILES ${PDB_PATH}/${BINARYNAME}.pdb DESTINATION debug COMPONENT DBGSYMBOLS )
-endfunction()
-
-# Mac OS case. We have to explicitly extract dSYM and then strip the binary
-function( __install_apple_dbg BINARYNAME )
-
-	if ( NOT DEFINED CMAKE_DSYMUTIL )
-		find_program ( CMAKE_DSYMUTIL dsymutil )
-	endif ()
-	if ( NOT DEFINED CMAKE_DSYMUTIL )
-		message ( SEND_ERROR "Missed objcopy prog. Can't split symbols!" )
-		unset ( SPLIT_SYMBOLS CACHE )
-	endif ()
-	mark_as_advanced ( CMAKE_DSYMUTIL )
-
-	ADD_CUSTOM_COMMAND ( TARGET ${BINARYNAME} POST_BUILD
-			COMMAND ${CMAKE_DSYMUTIL} -f $<TARGET_FILE:${BINARYNAME}> -o $<TARGET_FILE:${BINARYNAME}>.dSYM
-			COMMAND strip -S $<TARGET_FILE:${BINARYNAME}>
-			)
-	INSTALL ( FILES $<TARGET_FILE:${BINARYNAME}>.dSYM
-			DESTINATION ${CMAKE_INSTALL_LIBDIR}/debug/usr/bin COMPONENT DBGSYMBOLS )
-endfunction()
-
 # non-windows case. For linux - use objcopy to make 'clean' and 'debug' binaries
 function( __install_linux_dbg BINARYNAME )
 	if ( NOT DEFINED CMAKE_OBJCOPY )
@@ -108,18 +47,22 @@ function( __install_linux_dbg BINARYNAME )
 			COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:${BINARYNAME}> $<TARGET_FILE:${BINARYNAME}>.dbg
 			COMMAND ${CMAKE_OBJCOPY} --strip-all $<TARGET_FILE:${BINARYNAME}>
 			COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:${BINARYNAME}>.dbg $<TARGET_FILE:${BINARYNAME}>
+			COMMENT "Splitting symbols from ${BINARYNAME}"
+			VERBATIM
 			)
-
 	INSTALL ( FILES $<TARGET_FILE:${BINARYNAME}>.dbg
-			DESTINATION ${CMAKE_INSTALL_LIBDIR}/debug/usr/bin COMPONENT DBGSYMBOLS RENAME ${BINARYNAME} )
+			DESTINATION ${CMAKE_INSTALL_LIBDIR}/debug/usr/bin
+			COMPONENT DBGSYMBOLS )
 endfunction()
 
-# add debug symbols to the target
-function( INSTALL_DBG BINARYNAME )
+# split debug symbols from target, return path with dbg
+function( install_dbg BINARYNAME )
 	if ( MSVC )
-		__install_win_dbg ( ${BINARYNAME})
+		message (STATUS "Stub. Not implemented (windows).")
+#		__install_win_dbg ( ${BINARYNAME} ${DBGOUT})
 	elseif ( APPLE )
-		__install_apple_dbg ( ${BINARYNAME})
+		message ( STATUS "Stub. Not implemented (mac)." )
+#		__install_apple_dbg ( ${BINARYNAME} ${DBGOUT})
 	else ()
 		__install_linux_dbg ( ${BINARYNAME})
 	endif ()
