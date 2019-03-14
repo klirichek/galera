@@ -27,6 +27,7 @@ OPTION ( STRICT_BUILD_FLAGS "Strict build flags" ON )
 OPTION ( PSI "Psi flag option" OFF )
 set ( WSREP_PATH "" CACHE
 		STRING "Path to Write Set Replication API specification sources." )
+OPTION ( WITH_GARBD "Build also garbd application" OFF )
 
 # separate property sets for C and CXX
 SET ( c_flags "" )
@@ -270,7 +271,9 @@ add_subdirectory ( gcache )
 add_subdirectory ( gcomm )
 add_subdirectory ( gcs )
 add_subdirectory ( galera )
-add_subdirectory ( garb )
+if ( WITH_GARBD )
+	add_subdirectory ( garb )
+endif()
 
 add_library ( galera_smm SHARED $<TARGET_OBJECTS:mmgalera> )
 target_link_libraries ( galera_smm PRIVATE gcs galerapp gcomm gcache galerautilsxx ${LINKS} )
