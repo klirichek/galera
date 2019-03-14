@@ -1,7 +1,9 @@
-if ( __cmake_helpers_included )
+if ( __galera_cmake_helpers_included )
 	return ()
 endif ()
-set ( __cmake_helpers_included YES )
+set ( __galera_cmake_helpers_included YES )
+
+message (STATUS "Included galerahelpers.cmake")
 
 function( DIAG VARR )
 	if ( DIAGNOSTIC )

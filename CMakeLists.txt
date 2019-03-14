@@ -9,14 +9,12 @@ project ( GALERA CXX C )
 set ( CMAKE_CXX_STANDARD 11 )
 
 SET ( GALERA_CMAKE_DIR "${GALERA_SOURCE_DIR}/cmake" )
-SET ( CMAKE_MODULE_PATH "${GALERA_SOURCE_DIR}/cmake" )
-
+set ( DIAGNOSTIC 1 )
 
 include ( GNUInstallDirs )
 
-include ( helpers )
+include ( "${GALERA_CMAKE_DIR}/galerahelpers.cmake" )
 
-set ( DIAGNOSTIC 1 )
 
 OPTION ( DBUG "dbug is a kind of debug" OFF )
 set ( DEBUG_LEVEL -1 CACHE INT "debug build with optimization level n" )
