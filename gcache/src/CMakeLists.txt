@@ -11,7 +11,20 @@ SET ( GCACHE_SOURCES
 		GCache.cpp
 		)
 
-add_library ( gcache STATIC ${GCACHE_SOURCES} )
+set ( GCACHE_HEADERS
+		gcache_bh.hpp
+		GCache.hpp
+		gcache_limits.hpp
+		gcache_memops.hpp
+		gcache_mem_store.hpp
+		gcache_page.hpp
+		gcache_page_store.hpp
+		gcache_rb_store.hpp
+		gcache_seqno.hpp
+		gcache_types.hpp
+		)
+
+add_library ( gcache STATIC ${GCACHE_SOURCES} ${GCACHE_HEADERS} )
 target_compile_options ( gcache PRIVATE ${cc_flags} ${cxx_flags} )
 
 if ( BUILD_TESTING )

@@ -236,7 +236,6 @@ endif()
 
 CheckWeffcpp ( weffcpp )
 if ( weffcpp )
-#	SET (CMAKE_CXX_FLAGS "-Weffc++ ${CMAKE_CXX_FLAGS}")
 	add_cxx_options ( "-Weffc++" )
 endif()
 

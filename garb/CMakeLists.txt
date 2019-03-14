@@ -15,7 +15,15 @@ SET ( GARB_SOURCES
 		garb_config.cpp
 		)
 
-add_executable ( garbd ${GARB_SOURCES} )
+# headers added is just to reveal them in IDE
+set ( GARB_HEADERS
+		garb_config.hpp
+		garb_gcs.hpp
+		garb_logger.hpp
+		garb_recv_loop.hpp
+		)
+
+add_executable ( garbd ${GARB_SOURCES} ${GARB_HEADERS})
 
 if ( WITH_BOOST )
 	find_package ( Boost COMPONENTS program_options )

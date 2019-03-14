@@ -34,8 +34,34 @@ SET ( LIBGCS_SOURCES
 		gcs_gcomm.cpp
 		)
 
+SET ( LIBGCS_HEADERS
+		gcs_act.hpp
+		gcs_act_proto.hpp
+		gcs_backend.hpp
+		gcs_comp_msg.hpp
+		gcs_core.hpp
+		gcs_defrag.hpp
+		gcs_dummy.hpp
+		gcs_fc.hpp
+		gcs_fifo_lite.hpp
+		gcs_gcache.hpp
+		gcs_gcomm.hpp
+		gcs_group.hpp
+		gcs.hpp
+		gcs_msg_type.hpp
+		gcs_node.hpp
+		gcs_params.hpp
+		gcs_priv.hpp
+		gcs_recv_msg.hpp
+		gcs_seqno.hpp
+		gcs_sm.hpp
+		gcs_spread.hpp
+		gcs_state_msg.hpp
+		gcs_test.hpp
+		)
 
-add_library ( gcs STATIC ${LIBGCS_SOURCES} )
+
+add_library ( gcs STATIC ${LIBGCS_SOURCES} ${LIBGCS_HEADERS} )
 target_compile_definitions ( gcs PRIVATE GCS_USE_GCOMM )
 target_compile_options ( gcs PRIVATE ${gcs_compile_options} )
 
