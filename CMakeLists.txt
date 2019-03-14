@@ -277,7 +277,7 @@ add_subdirectory ( garb )
 
 add_library ( galera_smm SHARED $<TARGET_OBJECTS:mmgalera> )
 target_link_libraries ( galera_smm PRIVATE gcs galerapp gcomm gcache galerautilsxx ${LINKS} )
-set_target_properties ( galera_smm PROPERTIES VERSION ${GALERA_VER} )
+#set_target_properties ( galera_smm PROPERTIES VERSION ${GALERA_VER} )
 set_target_properties ( galera_smm PROPERTIES SOVERSION "${WSREP_INTERFACE_VERSION}" )
 
 install_dbg ( galera_smm ${CMAKE_CURRENT_BINARY_DIR} )
