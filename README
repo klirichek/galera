@@ -76,7 +76,7 @@ If you're going just to compile galera-smm and garbd it is enough to have:
 on Debian: libssl-dev, libboost-system-dev, libboost-program-options-dev
 on Redhat: openssl-devel boost-devel
 If you want full installation with tests you also need check (check-devel) and may be
-subunit (libsubunit-dev). For testing you have to build with -DBUILD_TESTING=1,
+subunit (libsubunit-dev). For testing you have to build with -DGALERA_TESTING=1,
 to run tests invoke ctest.
 
 For more information, see:
