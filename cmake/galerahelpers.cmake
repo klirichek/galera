@@ -32,7 +32,7 @@ function ( check_headers _HEADERS )
 endfunction ( check_headers )
 
 # non-windows case. For linux - use objcopy to make 'clean' and 'debug' binaries
-function( __install_linux_dbg BINARYNAME )
+function( __split_linux_dbg BINARYNAME )
 	if ( NOT DEFINED CMAKE_OBJCOPY )
 		find_package ( BinUtils QUIET )
 	endif ()
@@ -58,15 +58,15 @@ function( __install_linux_dbg BINARYNAME )
 endfunction()
 
 # split debug symbols from target, return path with dbg
-function( install_dbg BINARYNAME )
+function( split_dbg BINARYNAME )
 	if ( MSVC )
 		message (STATUS "Stub. Not implemented (windows).")
-#		__install_win_dbg ( ${BINARYNAME} ${DBGOUT})
+#		__split_win_dbg ( ${BINARYNAME} ${DBGOUT})
 	elseif ( APPLE )
 		message ( STATUS "Stub. Not implemented (mac)." )
-#		__install_apple_dbg ( ${BINARYNAME} ${DBGOUT})
+#		__split_apple_dbg ( ${BINARYNAME} ${DBGOUT})
 	else ()
-		__install_linux_dbg ( ${BINARYNAME})
+		__split_linux_dbg ( ${BINARYNAME})
 	endif ()
 endfunction()
 

@@ -283,7 +283,6 @@ set_target_properties ( galera_smm PROPERTIES SOVERSION "${WSREP_INTERFACE_VERSI
 diag ( CMAKE_CXX_COMPILER_ID )
 
 if ( SPLIT_SYMBOLS )
-	install_dbg ( galera_smm )
+	split_dbg ( galera_smm )
 endif ()
 install ( TARGETS galera_smm LIBRARY DESTINATION lib COMPONENT APPLICATIONS )
-include (CPack)
