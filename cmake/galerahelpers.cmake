@@ -54,7 +54,7 @@ function( __split_linux_dbg BINARYNAME )
 			)
 	INSTALL ( FILES $<TARGET_FILE:${BINARYNAME}>.dbg
 			DESTINATION ${CMAKE_INSTALL_LIBDIR}/debug/usr/bin
-			COMPONENT DBGSYMBOLS )
+			COMPONENT dbgsymbols )
 endfunction()
 
 # split debug symbols from target, return path with dbg
