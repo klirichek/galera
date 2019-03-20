@@ -17,7 +17,7 @@ include ( "${GALERA_CMAKE_DIR}/galerahelpers.cmake" )
 
 
 OPTION ( DBUG "dbug is a kind of debug" OFF )
-set ( DEBUG_LEVEL -1 CACHE INT "debug build with optimization level n" )
+set ( DEBUG_LEVEL -1 CACHE STRING "debug build with optimization level n" )
 OPTION ( WITH_BOOST "disable or enable boost libraries" ON )
 OPTION ( WITH_BOOST_POOL "use or not use boost pool allocator" OFF )
 OPTION ( SYSTEM_ASIO "use system asio library, if available" TRUE )
@@ -288,4 +288,4 @@ if ( SPLIT_SYMBOLS )
 	split_dbg ( ${TARGET_NAME} )
 endif ()
 
-install ( TARGETS ${TARGET_NAME} LIBRARY DESTINATION ${BINPREFIX}lib COMPONENT applications NAMELINK_SKIP )
+install ( TARGETS ${TARGET_NAME} LIBRARY DESTINATION usr/lib COMPONENT applications NAMELINK_SKIP )
